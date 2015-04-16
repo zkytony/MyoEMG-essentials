@@ -1,0 +1,24 @@
+﻿Build started 4/15/2015 9:45:57 PM.
+     1>Project "C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\examplePlot.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\source\Graphics.cpp ..\source\main.cpp
+         main.cpp
+         Graphics.cpp
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\examplePlot.exe" /INCREMENTAL /NOLOGO MatPlot_static.lib freeglut_static.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\examplePlot.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\examplePlot.lib" /MACHINE:X86 Debug\Graphics.obj
+         Debug\main.obj
+         MatPlot_static.lib(matplotpp.obj) : MSIL .netmodule or module compiled with /GL found; restarting link with /LTCG; add /LTCG to the link command line to improve linker performance
+     1>LINK : warning LNK4075: ignoring '/INCREMENTAL' due to '/LTCG' specification
+     1>Graphics.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/OPT:LBR' specification
+         Generating code
+         Finished generating code
+     1>MatPlot_static.lib(matplotpp.obj) : warning LNK4204: 'C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\vc120.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>MatPlot_static.lib(GraphicsInit.obj) : warning LNK4204: 'C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\vc120.pdb' is missing debugging information for referencing module; linking object as if no debug info
+     1>MatPlot_static.lib(gl2ps.obj) : warning LNK4204: 'C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\vc120.pdb' is missing debugging information for referencing module; linking object as if no debug info
+         examplePlot.vcxproj -> C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\Debug\examplePlot.exe
+     1>Done Building Project "C:\Users\qaz2wsx3\Desktop\MyoEMG\MyoEMG\MyoEMG\examplePlot\examplePlot\build\examplePlot.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:10.31
