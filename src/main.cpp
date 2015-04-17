@@ -215,22 +215,23 @@ public:
 
 };*/
 
+extern myo::Hub hub("com.example.emg-data-sample");
+
 class MyoPlot :public MatPlot{
 
 public:
 
-	myo::Hub *m_hub;
 	myo::Myo *m_myo;
 	DataCollector collector;
 
-	MyoPlot() {
+	MyoPlot()
+		: MatPlot()
+	{
 		// We catch any exceptions that might occur below -- see the catch statement for more details.
 		try {
 
 			// First, we create a Hub with our application identifier. Be sure not to use the com.example namespace when
 			// publishing your application. The Hub provides access to one or more Myos.
-			myo::Hub hub("com.example.emg-data-sample");
-			m_hub = &hub;
 
 			std::cout << "Attempting to find a Myo..." << std::endl;
 
@@ -280,12 +281,12 @@ public:
 	}
 };
 
-extern MyoPlot mp = MyoPlot();
+extern MyoPlot *mp = new MyoPlot();
 
 // function for glutDisplayFunc to call back
 void display(){ 
 
-	mp.display(); 
+	mp->display(); 
 
 	// Finally we enter our main loop.
 	try {
@@ -293,10 +294,10 @@ void display(){
 			std::cout << "SHIT" << std::endl;
 			// In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
 			// In this case, we wish to update our display 50 times a second, so we run for 1000/20 milliseconds.
-			mp.m_hub->run(1000 / 20);
+			hub.run(1000 / 20);
 			// After processing events, we call the print() member function we defined above to print out the values we've
 			// obtained from any events that have occurred.
-			mp.collector.print();
+			mp->collector.print();
 		}
 	}
 	catch (const std::exception& e) {
@@ -307,7 +308,7 @@ void display(){
 		exit(0);
 	}
 }
-void reshape(int w, int h){ mp.reshape(w, h); }
+void reshape(int w, int h){ mp->reshape(w, h); }
 
 int main(int argc, char** argv)
 {
