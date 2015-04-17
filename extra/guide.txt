@@ -1,0 +1,35 @@
+1. Unzip GL Files.zip
+2. Copy GL\ (in GL Files\include\) to Microsoft Visual Studio VC++ 's include directory (C:\Program Files(x86)\Microsoft Visual Studio 12.0\VC\include\
+3. Copy glu32.dll, glut32.dll, opengl32.dll files in GL Files\dll to Microsoft Visual Studio VC++ 's bin directory (C:\Program Files(x86)\Microsoft Visual Studio 12.0\VC\bin\
+4. Copy all .lib files in GL Files\lib to Microsoft Visual Studio VC++ 's lib directory (C:\Program Files(x86)\Microsoft Visual Studio 12.0\VC\lib\
+5. Open Microsoft Visual Studio 2013
+6. In Project Properties, go to Linker > Input, in Additional Dependencies, add opengl32.lib, glu32.lib
+7. In the project, make sure to include gl2ps.h and gl2ps.c. It works for me to add them to the project.
+8. Also, add matplotpp.cc and matplotpp.h to the project. The right version for matplotpp can be found at https://code.google.com/p/matplotpp/
+9. Demo code (also from https://code.google.com/p/matplotpp/):
+
+using namespace std;
+#include "matplotpp.h"
+class MP :public MatPlot{ 
+  void DISPLAY(){
+    vector<double> x(100),y(100);    
+    for(int i=0;i<100;++i){
+      x[i]=0.1*i;
+      y[i]=sin(x[i]);
+    }
+    plot(x,y);
+  }
+}mp;
+void display(){ mp.display(); }
+void reshape(int w,int h){ mp.reshape(w,h); }
+int main(int argc,char* argv[]){
+  glutInit(&argc, argv);
+  glutCreateWindow(100,100,400,300);
+  glutDisplayFunc( display );
+  glutReshapeFunc( reshape );
+  glutMainLoop();    
+  return 0;
+}
+
+10. This process works for me to set up an opengl project and use the matplotpp by glut* functions instead of using the very inflexible Plot::DISPLAY()
+
