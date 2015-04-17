@@ -224,6 +224,8 @@ public:
 	myo::Myo *m_myo;
 	DataCollector collector;
 
+	int len;
+
 	MyoPlot()
 		: MatPlot()
 	{
@@ -272,26 +274,32 @@ public:
 	}
 
 	void DISPLAY(){
-		std::vector<double> x(100), y(100);
-		for (int i = 0; i<100; ++i){
-			x[i] = 0.1*i;
-			y[i] = sin(x[i]);
-		}
-		plot(x, y);
+		dvec x(2);
+		x[0] = len;
+		x[1] = len / 2;
+		bar(x);
+	}
+
+	void feed(int len) {
+		this->len = len;
 	}
 };
 
 extern MyoPlot *mp = new MyoPlot();
+extern int m_len = 40;
 
 // function for glutDisplayFunc to call back
 void display(){ 
 
-	mp->display(); 
 
 	// Finally we enter our main loop.
 	try {
 		while (1) {
-			std::cout << "SHIT" << std::endl;
+			m_len--;
+			mp->feed(m_len);
+
+			mp->display();
+			std::cout << m_len << std::endl;
 			// In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
 			// In this case, we wish to update our display 50 times a second, so we run for 1000/20 milliseconds.
 			hub.run(1000 / 20);
@@ -318,7 +326,7 @@ int main(int argc, char** argv)
 	std::cout << "Main:>\t Starting graphics" << std::endl;
 	
 	glutInit(&argc, argv);
-	glutCreateWindow(100, 100, 100, 100);
+	glutCreateWindow(100, 100, 700, 500);
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutMainLoop();
