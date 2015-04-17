@@ -186,74 +186,144 @@ public:
 
 };
 
-int main(int argc, char** argv)
-{
+/*
+class MyoPlot :public MatPlot {
 
-	bool graphics_exit = FALSE;
+public:
+	dvec x;
 
-	std::cout << "Main:>\t Starting graphics" << std::endl;
-	if (_USEGRAPHICS) {
-		Graphics_init(argc, argv, 20, 10, 1200, 800, &graphics_exit, "Myo EMG Data Visualization"); //Set up graphics
+	MyoPlot() {
+		x = dvec(2);
+		x[0] = 2.5;
+		x[1] = 6.4;
 	}
 
-	// We catch any exceptions that might occur below -- see the catch statement for more details.
-	try {
+	void MyoPlot::DISPLAY()
+	{
+		layer("Plot", 1); // Name, Visible
+		dvec x(2); // dvec is just double vector. It is dumb
+		x[0] = 2.5;
+		x[1] = 6.4;
 
-		// First, we create a Hub with our application identifier. Be sure not to use the com.example namespace when
-		// publishing your application. The Hub provides access to one or more Myos.
-		myo::Hub hub("com.example.emg-data-sample");
+		bar(x, 0.5);
+	}
 
-		std::cout << "Attempting to find a Myo..." << std::endl;
+	void feed(int a, int b) {
+		this->x[0] = a;
+		this->x[1] = b;
+	}
 
-		// Next, we attempt to find a Myo to use. If a Myo is already paired in Myo Connect, this will return that Myo
-		// immediately.
-		// waitForMyo() takes a timeout value in milliseconds. In this case we will try to find a Myo for 10 seconds, and
-		// if that fails, the function will return a null pointer.
-		myo::Myo* myo = hub.waitForMyo(10000);
+};*/
 
-		// If waitForMyo() returned a null pointer, we failed to find a Myo, so exit with an error message.
-		if (!myo) {
-			throw std::runtime_error("Unable to find a Myo!");
+class MyoPlot :public MatPlot{
+
+public:
+
+	myo::Hub *m_hub;
+	myo::Myo *m_myo;
+	DataCollector collector;
+
+	MyoPlot() {
+		// We catch any exceptions that might occur below -- see the catch statement for more details.
+		try {
+
+			// First, we create a Hub with our application identifier. Be sure not to use the com.example namespace when
+			// publishing your application. The Hub provides access to one or more Myos.
+			myo::Hub hub("com.example.emg-data-sample");
+			m_hub = &hub;
+
+			std::cout << "Attempting to find a Myo..." << std::endl;
+
+			// Next, we attempt to find a Myo to use. If a Myo is already paired in Myo Connect, this will return that Myo
+			// immediately.
+			// waitForMyo() takes a timeout value in milliseconds. In this case we will try to find a Myo for 10 seconds, and
+			// if that fails, the function will return a null pointer.
+			m_myo = hub.waitForMyo(10000);
+
+			// If waitForMyo() returned a null pointer, we failed to find a Myo, so exit with an error message.
+			if (!m_myo) {
+				throw std::runtime_error("Unable to find a Myo!");
+			}
+
+			// We've found a Myo.
+			std::cout << "Connected to a Myo armband!" << std::endl << std::endl;
+
+			// Next we enable EMG streaming on the found Myo.
+			m_myo->setStreamEmg(myo::Myo::streamEmgEnabled);
+
+			// Next we construct an instance of our DeviceListener, so that we can register it with the Hub.
+
+			// Hub::addListener() takes the address of any object whose class inherits from DeviceListener, and will cause
+			// Hub::run() to send events to all registered device listeners.
+			hub.addListener(&collector);
+
+
+			// If a standard exception occurred, we print out its message and exit.
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+			std::cerr << "Press enter to continue.";
+			std::cin.ignore();
+
+			exit(0);
 		}
 
-		// We've found a Myo.
-		std::cout << "Connected to a Myo armband!" << std::endl << std::endl;
+	}
 
-		// Next we enable EMG streaming on the found Myo.
-		myo->setStreamEmg(myo::Myo::streamEmgEnabled);
+	void DISPLAY(){
+		std::vector<double> x(100), y(100);
+		for (int i = 0; i<100; ++i){
+			x[i] = 0.1*i;
+			y[i] = sin(x[i]);
+		}
+		plot(x, y);
+	}
+};
 
-		// Next we construct an instance of our DeviceListener, so that we can register it with the Hub.
-		DataCollector collector;
+extern MyoPlot mp = MyoPlot();
 
-		// Hub::addListener() takes the address of any object whose class inherits from DeviceListener, and will cause
-		// Hub::run() to send events to all registered device listeners.
-		hub.addListener(&collector);
+// function for glutDisplayFunc to call back
+void display(){ 
 
-		// Finally we enter our main loop.
+	mp.display(); 
+
+	// Finally we enter our main loop.
+	try {
 		while (1) {
+			std::cout << "SHIT" << std::endl;
 			// In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
 			// In this case, we wish to update our display 50 times a second, so we run for 1000/20 milliseconds.
-			hub.run(1000 / 1000);
+			mp.m_hub->run(1000 / 20);
 			// After processing events, we call the print() member function we defined above to print out the values we've
 			// obtained from any events that have occurred.
-			collector.print();
+			mp.collector.print();
 		}
-
-		// If a standard exception occurred, we print out its message and exit.
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Error: " << e.what() << std::endl;
 		std::cerr << "Press enter to continue.";
 		std::cin.ignore();
 
-
-		return 1;
+		exit(0);
 	}
+}
+void reshape(int w, int h){ mp.reshape(w, h); }
 
+int main(int argc, char** argv)
+{
+
+	bool graphics_exit = FALSE;
+
+	std::cout << "Main:>\t Starting graphics" << std::endl;
+	
+	glutInit(&argc, argv);
+	glutCreateWindow(100, 100, 100, 100);
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
+	glutMainLoop();
+
+	
 	// Done.
-	std::cout << "Main:>\t User functions exited" << std::endl;
-	if (_USEGRAPHICS) {
-		Graphics_Close();
-	}
+
 
 }
