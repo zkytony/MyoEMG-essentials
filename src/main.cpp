@@ -26,6 +26,7 @@
 class DataCollector : public myo::DeviceListener {
 public:
 	std::array <int8_t, 8> emgSamples; // THIS IS ABSOLUTELY REQUIRED. THE MYO's sample code does not have this!
+	std::vector<double> emgSamples_vector;
 	std::ofstream data_file;
 	myo::Pose currentPose;
 	bool onArm;
@@ -33,7 +34,7 @@ public:
 	struct tm localTime;
 
 	DataCollector()
-		: onArm(false), currentPose(), emgSamples()
+		: onArm(false), currentPose(), emgSamples(), emgSamples_vector(8)
 	{
 	}
 
@@ -65,6 +66,7 @@ public:
 	{
 		for (int i = 0; i < 8; i++) {
 			emgSamples[i] = emg[i];
+			emgSamples_vector[i] = (double) emg[i];
 		}
 	}
 
@@ -186,35 +188,6 @@ public:
 
 };
 
-/*
-class MyoPlot :public MatPlot {
-
-public:
-	dvec x;
-
-	MyoPlot() {
-		x = dvec(2);
-		x[0] = 2.5;
-		x[1] = 6.4;
-	}
-
-	void MyoPlot::DISPLAY()
-	{
-		layer("Plot", 1); // Name, Visible
-		dvec x(2); // dvec is just double vector. It is dumb
-		x[0] = 2.5;
-		x[1] = 6.4;
-
-		bar(x, 0.5);
-	}
-
-	void feed(int a, int b) {
-		this->x[0] = a;
-		this->x[1] = b;
-	}
-
-};*/
-
 extern myo::Hub hub("com.example.emg-data-sample");
 
 class MyoPlot :public MatPlot{
@@ -224,10 +197,13 @@ public:
 	myo::Myo *m_myo;
 	DataCollector collector;
 
+	std::vector<double> *emg;
+	bool emg_updated;
+
 	int len;
 
 	MyoPlot()
-		: MatPlot()
+		: MatPlot(), emg_updated(false)
 	{
 		// We catch any exceptions that might occur below -- see the catch statement for more details.
 		try {
@@ -274,19 +250,20 @@ public:
 	}
 
 	void DISPLAY(){
-		dvec x(2);
-		x[0] = len;
-		x[1] = len / 2;
-		bar(x);
+		axis(1, 8, -100, 100);
+		if (emg_updated) {
+			bar(*emg);
+			emg_updated = false;
+		}
 	}
 
-	void feed(int len) {
-		this->len = len;
+	void feed_emg(std::vector<double> *emg_src) {
+		this->emg = emg_src;
+		emg_updated = true;
 	}
 };
 
 extern MyoPlot *mp = new MyoPlot();
-extern int m_len = 40;
 
 // function for glutDisplayFunc to call back
 void display(){ 
@@ -295,11 +272,9 @@ void display(){
 	// Finally we enter our main loop.
 	try {
 		while (1) {
-			m_len--;
-			mp->feed(m_len);
-
+			vector<double> *emg = &mp->collector.emgSamples_vector;
+			mp->feed_emg(emg);
 			mp->display();
-			std::cout << m_len << std::endl;
 			// In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
 			// In this case, we wish to update our display 50 times a second, so we run for 1000/20 milliseconds.
 			hub.run(1000 / 20);
@@ -316,7 +291,10 @@ void display(){
 		exit(0);
 	}
 }
-void reshape(int w, int h){ mp->reshape(w, h); }
+// reshape
+void reshape(int w, int h){ 
+	mp->reshape(w, h); 
+}
 
 int main(int argc, char** argv)
 {
@@ -326,7 +304,7 @@ int main(int argc, char** argv)
 	std::cout << "Main:>\t Starting graphics" << std::endl;
 	
 	glutInit(&argc, argv);
-	glutCreateWindow(100, 100, 700, 500);
+	glutCreateWindow(500, 100, 700, 500);
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutMainLoop();
