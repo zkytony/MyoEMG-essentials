@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Copyright (C) 2013-2014 Thalmic Labs Inc.
 // Distributed under the Myo SDK license agreement. See LICENSE.txt for details.
 
