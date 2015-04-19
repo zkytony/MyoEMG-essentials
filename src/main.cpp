@@ -26,6 +26,8 @@
 class DataCollector : public myo::DeviceListener {
 public:
 	std::array <int8_t, 8> emgSamples; // THIS IS ABSOLUTELY REQUIRED. THE MYO's sample code does not have this!
+	std::vector<double> emgSamples_vector;
+	std::vector<std::vector<double>> emg_break;
 	std::ofstream data_file;
 	myo::Pose currentPose;
 	bool onArm;
@@ -33,8 +35,9 @@ public:
 	struct tm localTime;
 
 	DataCollector()
-		: onArm(false), currentPose(), emgSamples()
+		: onArm(false), currentPose(), emgSamples(), emgSamples_vector(8), emg_break(8)
 	{
+		
 	}
 
 	// onUnpair() is called whenever the Myo is disconnected from Myo Connect by the user.
@@ -65,6 +68,8 @@ public:
 	{
 		for (int i = 0; i < 8; i++) {
 			emgSamples[i] = emg[i];
+			emgSamples_vector[i] = (double) emg[i];
+			emg_break[i].push_back((double)emg[i]);
 		}
 	}
 
@@ -109,7 +114,7 @@ public:
 		}
 		else {
 			// Print out a placeholder for the arm and pose when Myo doesn't currently know which arm it's on.
-			std::cout << '[' << std::string(8, ' ') << ']' << "[?]" << '[' << std::string(14, ' ') << ']';
+			//std::cout << '[' << std::string(8, ' ') << ']' << "[?]" << '[' << std::string(14, ' ') << ']';
 			this->data_file << match_pose_id(currentPose) << ',';
 		}
 
@@ -122,11 +127,11 @@ public:
 			//std::cout << '(' << emgString << std::string(4 - emgString.size(), ' ') << ')';
 			this->data_file << emgString << ',';
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 		this->data_file << time_stamp() << ',' << getMilliCount() << ' ';
 		this->data_file << "\n";
 
-		std::cout << std::flush;
+		//std::cout << std::flush;
 
 	}
 
@@ -186,35 +191,6 @@ public:
 
 };
 
-/*
-class MyoPlot :public MatPlot {
-
-public:
-	dvec x;
-
-	MyoPlot() {
-		x = dvec(2);
-		x[0] = 2.5;
-		x[1] = 6.4;
-	}
-
-	void MyoPlot::DISPLAY()
-	{
-		layer("Plot", 1); // Name, Visible
-		dvec x(2); // dvec is just double vector. It is dumb
-		x[0] = 2.5;
-		x[1] = 6.4;
-
-		bar(x, 0.5);
-	}
-
-	void feed(int a, int b) {
-		this->x[0] = a;
-		this->x[1] = b;
-	}
-
-};*/
-
 extern myo::Hub hub("com.example.emg-data-sample");
 
 class MyoPlot :public MatPlot{
@@ -224,9 +200,31 @@ public:
 	myo::Myo *m_myo;
 	DataCollector collector;
 
+	std::vector<double> *emg;
+	std::vector<double> emg0;
+	std::vector<double> emg1;
+	std::vector<double> emg2;
+	std::vector<double> emg3;
+	std::vector<double> emg4;
+	std::vector<double> emg5;
+	std::vector<double> emg6;
+	std::vector<double> emg7;
+	std::array<bool, 8> iemg;
+
+	int c_type;
+	bool emg_updated;
+	bool emg_break_updated;
+
+	int len;
+
+	long long last_mili; // last execution mili time
+	double freq;
+
 	MyoPlot()
-		: MatPlot()
+		: MatPlot(), emg_updated(false), c_type(-1), emg_break_updated(false), iemg(), last_mili(-1), freq(-1)
 	{
+		iemg.fill(false);
+
 		// We catch any exceptions that might occur below -- see the catch statement for more details.
 		try {
 
@@ -272,12 +270,164 @@ public:
 	}
 
 	void DISPLAY(){
-		std::vector<double> x(100), y(100);
-		for (int i = 0; i<100; ++i){
-			x[i] = 0.1*i;
-			y[i] = sin(x[i]);
+
+		layer("My Plot", 1);
+		// Everything before the next subplot() will be on this subplot
+		int h = subplot(2, 5, 1);  // first plot -- current EMG
+		
+		axis(0, 9, -100, 100);
+		std::ostringstream ss;
+		ss << freq;
+		std::string freq_str = ss.str();
+		text(1, 1, "Current FF: " + freq_str);
+		if (emg_updated) {
+			bar(*emg, 1);
+			emg_updated = false;
 		}
-		plot(x, y);
+		
+		//if (c_type != -1) { // current type is not 'unknown'
+		h = subplot(2, 5, 2); // second subplot -- REAL TIME EMG
+		axis(0, 25, -100, 100);
+		text(1, 1, "#1");
+		if (iemg[0]) {
+			bar(emg0, 1);
+			iemg[0] = false;
+		}
+		
+		h = subplot(2, 5, 3); // third subplot -- REAL TIME EMG for doubleTap
+		axis(0, 25, -100, 100);
+		text(1, 1, "#2");
+		if (iemg[1]) {
+			bar(emg1, 1);
+			iemg[1] = false;
+		}
+		
+		h = subplot(2, 5, 4); // fourth subplot 
+		axis(0, 25, -100, 100);
+		text(1, 1, "#3");
+		if (iemg[2]) {
+			bar(emg2, 1);
+			iemg[2] = false;
+		}
+		
+		h = subplot(2, 5, 5); // fifth subplot 
+		axis(0, 25, -100, 100);
+		text(1, 1, "#4");
+		if (iemg[3]) {
+			bar(emg3, 1);
+			iemg[3] = false;
+		}
+
+		h = subplot(2, 5, 6); // sixth subplot
+		axis(0, 25, -100, 100);
+		text(1, 1, "#5");
+		if (iemg[4]) {
+			bar(emg4, 1);
+			iemg[4] = false;
+		}
+
+		h = subplot(2, 5, 7); // seventh subplot
+		axis(0, 25, -100, 100);
+		text(1, 1, "#6");
+		if (iemg[5]) {
+			bar(emg5, 1);
+			iemg[5] = false;
+		}
+
+		h = subplot(2, 5, 8); // eighth subplot
+		axis(0, 25, -100, 100);
+		text(1, 1, "#7");
+		if (iemg[6]) {
+			bar(emg6, 1);
+			iemg[6] = false;
+		}
+		
+		h = subplot(2, 5, 9); // eighth subplot
+		axis(0, 25, -100, 100);
+		text(1, 1, "#8");
+		if (iemg[7]) {
+			bar(emg7, 1);
+			iemg[7] = false;
+		}
+	}
+
+	// type:
+	// 0 for rest
+	// 1 for doubleTap
+	// 2 for fingerSpread
+	// 3 for waveIn
+	// 4 for waveOut
+	// 5 for fist
+	// -1 for unknown
+	void feed_emg(std::vector<double> *emg_src) {
+		emg = emg_src;
+		emg_updated = true;
+
+		if (emg0.size() >= 25) {
+			emg0.clear();
+		}
+		emg0.push_back(emg_src->at(0));
+		iemg[0] = true;
+		
+		if (emg1.size() >= 25) {
+			emg1.clear();
+		}
+		emg1.push_back(emg_src->at(1));
+		iemg[1] = true;
+		
+		if (emg2.size() >= 25) {
+			emg2.clear();
+		}
+		emg2.push_back(emg_src->at(2));
+		iemg[2] = true;
+
+		if (emg3.size() >= 25) {
+			emg3.clear();
+		}
+		emg3.push_back(emg_src->at(3));
+		iemg[3] = true;
+		
+		if (emg4.size() >= 25) {
+			emg4.clear();
+		}
+		emg4.push_back(emg_src->at(4));
+		iemg[4] = true;
+
+		if (emg5.size() >= 25) {
+			emg5.clear();
+		}
+		emg5.push_back(emg_src->at(5));
+		iemg[5] = true;
+
+
+		if (emg6.size() >= 25) {
+			emg6.clear();
+		}
+		emg6.push_back(emg_src->at(6));
+		iemg[6] = true;
+
+
+		if (emg7.size() >= 25) {
+			emg7.clear();
+		}
+		emg7.push_back(emg_src->at(7));
+		iemg[7] = true;
+		
+	}
+
+	// feed in time the loop is executed again;
+	void feed_time(long long mili) {
+		if (last_mili == -1) {
+			last_mili = mili;
+		}
+		else {
+			// diff = mili - last_mili = miliseconds for one execution (1 exec / diff miliseconds)
+			// 1 / diff = M executions / millisecond
+			// M * 1000 = FF executions / second
+			double diff = (double)mili - (double)last_mili;
+			freq = 1.0 / diff * 1000;
+			last_mili = mili;
+		}
 	}
 };
 
@@ -286,15 +436,18 @@ extern MyoPlot *mp = new MyoPlot();
 // function for glutDisplayFunc to call back
 void display(){ 
 
-	mp->display(); 
 
 	// Finally we enter our main loop.
 	try {
 		while (1) {
-			std::cout << "SHIT" << std::endl;
+			mp->feed_time(mp->collector.getMilliCount()); // it is a bit wierd to pass such a parameter - getMilliCount may ought not to be member function of Collecor
+			std::vector<double> *emg = &mp->collector.emgSamples_vector;
+			mp->feed_emg(emg);
+			//mp->feed_emg_break(emg_break);
+			mp->display();
 			// In each iteration of our main loop, we run the Myo event loop for a set number of milliseconds.
 			// In this case, we wish to update our display 50 times a second, so we run for 1000/20 milliseconds.
-			hub.run(1000 / 20);
+			hub.run(1000 / 100);
 			// After processing events, we call the print() member function we defined above to print out the values we've
 			// obtained from any events that have occurred.
 			mp->collector.print();
@@ -308,7 +461,10 @@ void display(){
 		exit(0);
 	}
 }
-void reshape(int w, int h){ mp->reshape(w, h); }
+// reshape
+void reshape(int w, int h){ 
+	mp->reshape(w, h); 
+}
 
 int main(int argc, char** argv)
 {
@@ -318,7 +474,7 @@ int main(int argc, char** argv)
 	std::cout << "Main:>\t Starting graphics" << std::endl;
 	
 	glutInit(&argc, argv);
-	glutCreateWindow(100, 100, 100, 100);
+	glutCreateWindow(0, 0, 1800, 1000);
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutMainLoop();
